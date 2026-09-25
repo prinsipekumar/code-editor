@@ -1,44 +1,54 @@
 // UTILITIES
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
 const out = $("#output");
 const preview = $("#preview");
 const STORAGE_KEY = "knezprince";
 
-const escapeHtml = s =>
-  String(s).replace(/[&<>"]/g, c => ({
-    '&': "&amp;",
-    '<': "&lt;",
-    '>': "&gt;",
-    '"': "&quot;"
-  }[c]
-));
+const escapeHtml = (s) =>
+  String(s).replace(
+    /[&<>"]/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+      })[c],
+  );
 
-function log(msg, type='info') {
-  const color = type === "error" ? "var(--err)" : type === "warn" ? "var(--warn)" : "var(--brand)";
+function log(msg, type = "info") {
+  const color =
+    type === "error"
+      ? "var(--err)"
+      : type === "warn"
+        ? "var(--warn)"
+        : "var(--brand)";
 
   const time = new Date().toLocaleTimeString();
 
   const line = document.createElement("div");
 
   line.innerHTML = `<span style="color: ${color}">[${time}]</span> ${escapeHtml(msg)}`;
-  
+
   out.appendChild(line);
   out.scrollTop = out.scrollHeight;
 }
 
-function clearOut()
-{
+function clearOut() {
   out.innerHTML = "";
 }
 
 $("#clearOut")?.addEventListener("click", clearOut);
 
 function makeEditor(id, mode) {
-
   const ed = ace.edit(id, {
     theme: "ace/theme/dracula",
-    mode, tabSize: 2, useSoftTabs: true, showPrintMargin: false, wrap: true
+    mode,
+    tabSize: 2,
+    useSoftTabs: true,
+    showPrintMargin: false,
+    wrap: true,
   });
 
   ed.session.setUseWrapMode(true);
@@ -47,9 +57,11 @@ function makeEditor(id, mode) {
     name: "run",
     bindKey: {
       win: "Ctrl-Enter",
-      mac: "Command-Enter"
+      mac: "Command-Enter",
     },
-    exec(){runWeb(false);}
+    exec() {
+      runWeb(false);
+    },
   });
 
   ed.commands.addCommand({
@@ -58,11 +70,12 @@ function makeEditor(id, mode) {
       win: "Ctrl-S",
       mac: "Command-S",
     },
-    exec(){saveProject();}
+    exec() {
+      saveProject();
+    },
   });
 
   return ed;
-
 }
 
 const ed_html = makeEditor("ed_html", "ace/mode/html");
@@ -71,12 +84,14 @@ const ed_js = makeEditor("ed_js", "ace/mode/javascript");
 
 const TAB_ORDER = ["html", "css", "js"];
 
-const wraps = Object.fromEntries($$("#webEditors .editor-wrap").map(w => [w.dataset.pane, w]));
+const wraps = Object.fromEntries(
+  $$("#webEditors .editor-wrap").map((w) => [w.dataset.pane, w]),
+);
 
 const editors = {
   html: ed_html,
   css: ed_css,
-  js: ed_js
+  js: ed_js,
 };
 
 function activePane() {
@@ -85,25 +100,26 @@ function activePane() {
 }
 
 function showPane(name) {
-  TAB_ORDER.forEach(k => {
+  TAB_ORDER.forEach((k) => {
     if (wraps[k]) {
-        wraps[k].hidden = (k !== name);
-    }})
+      wraps[k].hidden = k !== name;
+    }
+  });
 
-    $$("#webTabs .tab").forEach(t => {
-      const on = t.dataset.pane === name;
-      t.classList.toggle("active", on);
-      t.setAttribute("aria-selected", on);
-      t.tabIndex = on ? 0 : -1;
-    });
+  $$("#webTabs .tab").forEach((t) => {
+    const on = t.dataset.pane === name;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+  });
 
-    requestAnimationFrame(() => {
-      const ed = editors[name];
-      if (ed && ed.resize) {
-        ed.resize(true);
-        ed.focus();
-      }
-    });
+  requestAnimationFrame(() => {
+    const ed = editors[name];
+    if (ed && ed.resize) {
+      ed.resize(true);
+      ed.focus();
+    }
+  });
 }
 
 $("#webTabs")?.addEventListener("click", (e) => {
@@ -111,15 +127,15 @@ $("#webTabs")?.addEventListener("click", (e) => {
   if (!btn) return;
 
   showPane(btn.dataset.pane);
-})
+});
 
 $("#webTabs")?.addEventListener("keydown", (e) => {
   const idx = TAB_ORDER.indexOf(activePane());
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
     const delta = e.key === "ArrowLeft" ? -1 : 1;
-    showPane(TAB_ORDER[(idx+delta + TAB_ORDER.length) % TAB_ORDER.length]);
+    showPane(TAB_ORDER[(idx + delta + TAB_ORDER.length) % TAB_ORDER.length]);
   }
-})
+});
 
 showPane("html");
 
@@ -127,7 +143,7 @@ function buildwebSrcdoc(withTests = false) {
   const html = ed_html.getValue();
   const css = ed_css.getValue();
   const js = ed_js.getValue();
-  const tests = ($("#testArea")?.value || '').trim();
+  const tests = ($("#testArea")?.value || "").trim();
 
   return `
   <!DOCTYPE html>
@@ -150,7 +166,7 @@ function buildwebSrcdoc(withTests = false) {
         
           ${js}
 
-          ${withTests && tests ? `\n/* tests */\n${tests}`: ''}
+          ${withTests && tests ? `\n/* tests */\n${tests}` : ""}
         
         } catch (e) {
           console.error(e);
@@ -163,7 +179,7 @@ function buildwebSrcdoc(withTests = false) {
   </html>`;
 }
 
-function runWeb(withTests=false) {
+function runWeb(withTests = false) {
   preview.srcdoc = buildwebSrcdoc(withTests);
   log(withTests ? "Run with tests" : "Web preview updated.");
 }
@@ -190,7 +206,7 @@ function projectJSON() {
     test: $("#testArea")?.value || "",
     html: ed_html.getValue(),
     css: ed_css.getValue(),
-    js: ed_js.getValue()
+    js: ed_js.getValue(),
   };
 }
 
@@ -207,7 +223,6 @@ function loadProject(obj) {
     ed_js.setValue(obj.js || "", -1);
 
     log("Project loaded.");
-
   } catch (e) {
     log("Error loading project: " + e, "error");
   }
@@ -221,15 +236,14 @@ function setDefaultContent() {
 
 function saveProject() {
   try {
-    const data =JSON.stringify(projectJSON(), null, 2);
+    const data = JSON.stringify(projectJSON(), null, 2);
     localStorage.setItem(STORAGE_KEY, data);
-    const blob = new Blob([data], {type: "application/json"});
+    const blob = new Blob([data], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "knezprince.json";
     a.click();
     log("Saved locally and downloaded JSON file.");
-
   } catch (e) {
     log("Error saving project: " + e, "error");
   }
@@ -238,7 +252,7 @@ function saveProject() {
 $("#saveBtn")?.addEventListener("click", saveProject);
 $("#loadBtn")?.addEventListener("click", () => $("#openFile").click());
 $("#openFile")?.addEventListener("change", async (e) => {
-  const f = e.target.files ?.[0];
+  const f = e.target.files?.[0];
   if (!f) {
     return;
   }
@@ -257,8 +271,13 @@ try {
   } else {
     setDefaultContent();
   }
-} catch{
+} catch {
   setDefaultContent();
 }
 
 log("Editor ready - Web only (HTML / CSS / JS)");
+
+const yearSpan = document.getElementById("year");
+if (yearSpan) {
+  yearSpan.textContent = new Date().getFullYear();
+}
